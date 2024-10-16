@@ -764,4 +764,9 @@ select instr(@string_lf, ' ') as posicao_espaco;
 select 
 substring_index(nome,' ',1) as primeiro_nome
 from cliente;
+---------------------------------------------------------------------------------------------
+Exercícios de Select Simples:
+https://raw.githubusercontent.com/alvaroriz/curso_sql_postgreSQL/refs/heads/main/Lista_Exercicios_Select_simples_001.txt
 
+Exercícios de agregaçao:
+https://raw.githubusercontent.com/alvaroriz/curso_sql_postgreSQL/refs/heads/main/Lista_Exercicio_agregacao_001.txt
