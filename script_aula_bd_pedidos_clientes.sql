@@ -764,9 +764,114 @@ select instr(@string_lf, ' ') as posicao_espaco;
 select 
 substring_index(nome,' ',1) as primeiro_nome
 from cliente;
----------------------------------------------------------------------------------------------
-Exercícios de Select Simples:
-https://raw.githubusercontent.com/alvaroriz/curso_sql_postgreSQL/refs/heads/main/Lista_Exercicios_Select_simples_001.txt
 
-Exercícios de agregaçao:
-https://raw.githubusercontent.com/alvaroriz/curso_sql_postgreSQL/refs/heads/main/Lista_Exercicio_agregacao_001.txt
+use pedido_venda;
+
+select * from cliente;
+
+create or replace view vw_pedidos_totais_agrupado_cliente_cidade
+as
+SELECT
+	c.nome as cliente, 
+    cid.nome as cidade,
+	ifnull(sum(pp.preco_unitario * pp.quantidade),0) as valor_total
+FROM cliente c
+left join pedido p on p.cliente_id = c.cliente_id
+left join pedido_produto pp on pp.pedido_id = p.pedido_id
+left join cliente_endereco ce on ce.cliente_id = c.cliente_id
+left join endereco e on e.endereco_id = ce.endereco_id
+left join cidade cid on cid.cidade_id = e.cidade_id
+group by c.nome, cid.nome 
+order by sum(pp.preco_unitario * pp.quantidade) desc;
+
+select cliente,cidade,valor_total from vw_pedidos_totais_agrupado_cliente_cidade
+where valor_total > 275;
+
+create or replace view vw_americanas_produtos
+as
+select 
+p.produto_id as id_produto,
+upper(p.nome) as produto,
+replace(cast(p.preco_venda as char(10)),'.',',') as  preco,
+m.marca_id as id_marca,
+upper(m.nome) as marca
+from Produto p
+join Marca m on m.marca_id = p.marca_id;
+
+select * from vw_americanas_produtos
+order by preco desc;
+
+select 
+upper(c.nome) as nome,
+c.cpf as cpf,
+sum(pp.preco_unitario * pp.quantidade) as total,
+concat(upper(c.nome),c.cpf, sum(pp.preco_unitario * pp.quantidade)) as resultado
+from pedido p
+join pedido_produto pp on pp.pedido_id = p.pedido_id
+join cliente c on c.cliente_id = p.cliente_id
+group by nome, cpf;
+---------------------------------------------------------------
+SELECT 
+upper(c.nome) as nome,
+c.cpf as cpf,
+sum(pp.preco_unitario * pp.quantidade) as total,
+
+length(upper(c.nome)) as tamanhoNome,
+(30-length(upper(c.nome))) as faltam_para_trinta_nome,
+
+length(upper(c.cpf)) as tamanho_cpf,
+length(sum(pp.preco_unitario * pp.quantidade)) as tamanho_preco,
+concat(
+		trim(upper(c.nome)), 
+        REPEAT(" ", (30-length(trim(upper(c.nome))))),
+        REPEAT("0", (16-length(upper(c.cpf)))),
+        c.cpf, 
+        
+        REPEAT("0", (10-length(cast(sum(pp.preco_unitario * pp.quantidade) as char)))),
+        REPLACE(cast(sum(pp.preco_unitario * pp.quantidade) as char),'.','')) as RESULTADO
+
+FROM pedido p 
+JOIN pedido_produto pp on pp.pedido_id = p.pedido_id
+JOIN cliente c on c.cliente_id = p.cliente_id
+GROUP BY nome,cpf;
+
+
+
+create or replace view vw_largura_fixa_vendas
+as
+SELECT 
+    CONCAT(
+        TRIM(upper(c.nome)),
+        REPEAT(' ', (30 - char_length(TRIM(upper(c.nome))))),
+        REPEAT('0', (16 - char_length(c.cpf))),
+        c.cpf, 
+        REPEAT('0', (10 - char_length(CAST(SUM(pp.preco_unitario * pp.quantidade) AS CHAR)))),
+        REPLACE(CAST(SUM(pp.preco_unitario * pp.quantidade) AS CHAR), '.', '')
+    ) AS RESULTADO
+FROM pedido p 
+JOIN pedido_produto pp ON pp.pedido_id = p.pedido_id
+JOIN cliente c ON c.cliente_id = p.cliente_id
+GROUP BY c.nome, c.cpf;
+
+select * from pedido;
+
+
+-- --------------------------------
+-- STORED PROCEDURES
+-- --------------------------------
+DELIMITER $$
+
+DELIMITER $$
+
+CREATE OR REPLACE PROCEDURE sp_zera_totais_pedido()
+BEGIN
+    UPDATE pedido SET total = 0;
+END$$
+
+DELIMITER ;
+
+
+-- Como executar
+CALL sp_zera_totais_pedido();
+
+
